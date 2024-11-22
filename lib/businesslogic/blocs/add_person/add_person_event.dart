@@ -15,13 +15,18 @@ class AddPersonEvent extends PersonEvent {
   List<Object> get props => [person];
 }
 
-class EditPersonEvent extends PersonEvent {
-  final PersonModel edittedPerson;
+class AddNestedChildEvent extends PersonEvent {
+  final PersonModel nestedChild;
+  final int parentId;
 
-  EditPersonEvent({
-    required this.edittedPerson,
+  AddNestedChildEvent({
+    required this.nestedChild,
+    required this.parentId,
   });
 
   @override
-  List<Object> get props => [edittedPerson];
+  List<Object> get props => [nestedChild, parentId];
+
+  @override
+  String toString() => 'AddNestedChildEvent(nestedChild: $nestedChild, parentId: $parentId)';
 }

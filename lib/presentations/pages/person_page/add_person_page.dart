@@ -5,28 +5,19 @@ import 'package:nested_layered_task/businesslogic/blocs/add_person/add_person_bl
 
 import 'package:nested_layered_task/businesslogic/models.dart';
 
-class AddEditPersonPage extends StatefulWidget {
-  static const String routeName = '/add_edit_person_page';
+class AddPersonPage extends StatefulWidget {
+  static const String routeName = '/add_person_page';
   final PersonModel? personModel;
 
-  const AddEditPersonPage({super.key, this.personModel});
+  const AddPersonPage({super.key, this.personModel});
   @override
-  State<AddEditPersonPage> createState() => _AddEditPersonPageState();
+  State<AddPersonPage> createState() => _AddPersonPageState();
 }
 
-class _AddEditPersonPageState extends State<AddEditPersonPage> {
+class _AddPersonPageState extends State<AddPersonPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    if (widget.personModel != null) {
-      nameController.text = widget.personModel!.name;
-      ageController.text = widget.personModel!.age.toString();
-    }
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -35,15 +26,15 @@ class _AddEditPersonPageState extends State<AddEditPersonPage> {
     super.dispose();
   }
 
-  Future<void> _saveAndUpdatePerson() async {
+  Future<void> _addPerson() async {
     if (_formKey.currentState!.validate()) {
       final person = PersonModel(
         name: nameController.text,
         age: int.tryParse(ageController.text)!,
-        id: widget.personModel?.id,
+        id: UniqueKey().hashCode,
       );
       if (widget.personModel != null) {
-        context.read<AddPersonBloc>().add(EditPersonEvent(edittedPerson: person));
+        context.read<AddPersonBloc>().add(AddNestedChildEvent(nestedChild: person, parentId: widget.personModel!.id!));
       } else {
         context.read<AddPersonBloc>().add(AddPersonEvent(person: person));
       }
@@ -61,13 +52,7 @@ class _AddEditPersonPageState extends State<AddEditPersonPage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            widget.personModel == null ? 'Add' : 'Update',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          automaticallyImplyLeading: false,
-        ),
+        appBar: buildAppBarWidget(),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -91,15 +76,15 @@ class _AddEditPersonPageState extends State<AddEditPersonPage> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: () => _saveAndUpdatePerson(),
+                    onPressed: () => _addPerson(),
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         )),
-                    child: Text(
-                      widget.personModel == null ? 'Submit' : 'Update',
-                      style: const TextStyle(color: Colors.white, fontSize: 20),
+                    child: const Text(
+                      'Submit',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
                     ),
                   ),
                 ),
@@ -108,6 +93,16 @@ class _AddEditPersonPageState extends State<AddEditPersonPage> {
           ),
         ),
       ),
+    );
+  }
+
+  AppBar buildAppBarWidget() {
+    return AppBar(
+      title: const Text(
+        'Update',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      automaticallyImplyLeading: false,
     );
   }
 

@@ -2,37 +2,38 @@
 
 part of 'add_person_bloc.dart';
 
-enum AddPersonStatus { initial, loading, loaded }
+enum AddingPersonStatus { initial, loading, loaded, error }
 
 class AddPersonState extends Equatable {
-  final AddPersonStatus status;
-  final List<PersonModel> persons;
+  final AddingPersonStatus status;
+  final List<PersonModel?> persons;
+  final String? message;
 
   const AddPersonState({
     required this.status,
     required this.persons,
+    this.message,
   });
 
   factory AddPersonState.initial() {
-    return const AddPersonState(
-      status: AddPersonStatus.initial,
-      persons: [],
-    );
+    return const AddPersonState(status: AddingPersonStatus.initial, persons: [], message: '');
   }
 
   @override
-  List<Object> get props => [status, persons];
+  List<Object> get props => [status, persons, message ?? ''];
 
   @override
   bool get stringify => true;
 
   AddPersonState copyWith({
-    AddPersonStatus? status,
-    List<PersonModel>? persons,
+    AddingPersonStatus? status,
+    List<PersonModel?>? persons,
+    String? message,
   }) {
     return AddPersonState(
       status: status ?? this.status,
       persons: persons ?? this.persons,
+      message: message ?? this.message,
     );
   }
 }

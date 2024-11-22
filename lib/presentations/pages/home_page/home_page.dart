@@ -14,26 +14,33 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: buildAppBarWidget(),
       floatingActionButton: buildFloatingActionButtonWidget(context),
-      body: BlocBuilder<AddPersonBloc, AddPersonState>(builder: (context, state) {
-        if (state.status == AddPersonStatus.initial) {
+      body: BlocConsumer<AddPersonBloc, AddPersonState>(listener: (context, state) {
+        if (state.status == AddingPersonStatus.error) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message.toString())));
+        }
+      }, builder: (context, state) {
+        if (state.status == AddingPersonStatus.initial) {
           return const Center(
               child: Text(
             'No Persons found, please add one',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ));
-        } else if (state.status == AddPersonStatus.loading) {
+        } else if (state.status == AddingPersonStatus.error) {
+          return const Center(child: Text('Error occured please restart your app'));
+        } else if (state.status == AddingPersonStatus.loading) {
           return const Center(child: CircularProgressIndicator());
-        } else if (state.status == AddPersonStatus.loaded) {
+        } else if (state.status == AddingPersonStatus.loaded) {
           final persons = state.persons;
           if (persons.isEmpty) {
             return const Center(
               child: Text('No Data Found'),
             );
           }
-          final List<PersonModel> nestedPersonList = generateNestedPersons(persons);
+
           return ListView(
+            shrinkWrap: true,
             padding: const EdgeInsets.all(16.0),
-            children: _buildExpansionTile(nestedPersonList, context),
+            children: _buildExpansionTile(persons, context),
           );
         }
         return Container();
@@ -44,7 +51,7 @@ class HomePage extends StatelessWidget {
   FloatingActionButton buildFloatingActionButtonWidget(BuildContext context) {
     return FloatingActionButton(
       backgroundColor: Colors.red,
-      onPressed: () => Navigator.pushNamed(context, AddEditPersonPage.routeName),
+      onPressed: () => Navigator.pushNamed(context, AddPersonPage.routeName),
       child: const Icon(
         Icons.add,
         color: Colors.white,
@@ -73,37 +80,12 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  List<PersonModel> generateNestedPersons(List<PersonModel> persons) {
-    List<PersonModel> nestedList = [];
-
-    for (int i = 0; i < persons.length; i++) {
-      if (i % 5 == 0) {
-        // Parent node
-        PersonModel currentParent = persons[i];
-        // Add nested children
-        PersonModel? lastChild = currentParent;
-        for (int j = 1; j <= 4; j++) {
-          // for (int j = 4; j > 1; j--) {
-          if (i + j < persons.length) {
-            lastChild = PersonModel(
-              name: persons[i + j].name,
-              age: persons[i + j].age,
-              id: persons[i + j].id,
-              children: lastChild == null ? [] : [lastChild],
-            );
-          }
-        }
-
-        // Add the fully nested structure to the list
-        nestedList.add(lastChild!);
-      }
-    }
-
-    return nestedList;
-  }
-
-  List<Widget> _buildExpansionTile(List<PersonModel> persons, BuildContext context) {
+  List<Widget> _buildExpansionTile(List<PersonModel?> persons, BuildContext context) {
     return persons.map((person) {
+      int totalChildren = person == null ? 0 : countTotalChildren(person);
+      if (person == null) {
+        return Container();
+      }
       return Container(
         key: UniqueKey(),
         margin: const EdgeInsets.all(8),
@@ -114,27 +96,49 @@ class HomePage extends StatelessWidget {
         child: Theme(
           data: ThemeData().copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("${person.name} ", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                IconButton(
-                    onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => AddEditPersonPage(
-                                  personModel: person,
-                                ))),
-                    icon: const Icon(
-                      Icons.edit_square,
-                    ))
-              ],
-            ),
-            subtitle: Text("${person.age.toString()} Years of Old"),
+            title: buildExpansionTileTitleWidget(person, context, totalChildren >= 4),
+            subtitle: Text("${person.age.toString()} Years of Old "),
             children: _buildExpansionTile(person.children, context),
           ),
         ),
       );
     }).toList();
+  }
+
+  int countTotalChildren(PersonModel? person) {
+    if (person == null) {
+      return 0;
+    }
+    int count = person.children.length; // Count direct children
+
+    for (var child in person.children) {
+      count += child != null ? countTotalChildren(child) : 0; // Recursively count descendants
+    }
+
+    return count;
+  }
+
+  Widget buildExpansionTileTitleWidget(PersonModel? person, BuildContext context, bool ischildAllowed) {
+    if (person == null) {
+      return Container();
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text("${person!.name} ", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        IconButton(
+            onPressed: ischildAllowed
+                ? null
+                : () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => AddPersonPage(
+                              personModel: person,
+                            ))),
+            icon: const Icon(
+              Icons.edit_square,
+            ))
+      ],
+    );
   }
 }

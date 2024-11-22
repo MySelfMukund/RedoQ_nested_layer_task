@@ -8,8 +8,8 @@ class AppRouter {
       case '/':
       case HomePage.routeName:
         return MaterialPageRoute(builder: (_) => const HomePage());
-      case AddEditPersonPage.routeName:
-        return MaterialPageRoute(builder: (_) => const AddEditPersonPage());
+      case AddPersonPage.routeName:
+        return MaterialPageRoute(builder: (_) => const AddPersonPage());
       default:
         return _errorRoute();
     }
